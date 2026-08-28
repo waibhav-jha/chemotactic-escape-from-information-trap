@@ -1,0 +1,18 @@
+import numpy as np
+
+X1, X2 = -1.5, 1.5
+A1, A2 = 1.0, 1.0
+S1, S2 = 0.7, 0.7
+
+V = 1.0
+D = 0.01
+DT = 0.01
+SIGMA = 0.10
+
+XMIN_DOMAIN, XMAX_DOMAIN = -6.0, 6.0
+NX = 2001
+ESCAPE_X = 0.0
+
+NTRAJ = 10000
+MAX_STEPS = 200000
+SEED = 12345
