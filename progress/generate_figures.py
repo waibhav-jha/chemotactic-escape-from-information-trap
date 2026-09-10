@@ -262,6 +262,161 @@ def generate_all_figures():
     fig.savefig(fig_path6, dpi=300)
     plt.close(fig)
     print("  Saved:", fig_path6)
+
+    # -------------------------------------------------------------
+    # Check for Step 9 Multi-Bit Dataset
+    # -------------------------------------------------------------
+    json9_path = os.path.join(results_dir, "data_step_9_multibit.json")
+    if os.path.exists(json9_path):
+        with open(json9_path, "r", encoding="utf-8") as f:
+            data9 = json.load(f)
+        print("Found Step 9 Multi-Bit Dataset. Generating Figure 7 & Figure 8...")
+
+        # -------------------------------------------------------------
+        # Figure 7: Multi-Bit Scaling & Thermodynamic Pareto Frontier
+        # -------------------------------------------------------------
+        fig, axes = plt.subplots(2, 2, figsize=(15, 11))
+
+        # Panel (a): Mean Escape Time <T_esc> vs Memory Budget b
+        exp1 = data9["experiment_1_memory_scaling"]
+        b_vals = np.array(exp1["memory_bits"])
+        rl_mfpts = np.array([exp1["rl_mfpt"][str(b)] for b in b_vals])
+        rl_stds = np.array([exp1["rl_std"][str(b)] for b in b_vals])
+
+        markov_b = [0, 1, 2, 3]
+        markov_mfpt = [exp1["exact_markov_mfpt"][str(b)] for b in markov_b]
+
+        axes[0, 0].plot(b_vals, rl_mfpts, marker="o", lw=2.5, color="#2b5c8f", label="Learned RL Policy $\\langle T_{\\mathrm{esc}} \\rangle^*(b)$")
+        axes[0, 0].fill_between(b_vals, np.maximum(0, rl_mfpts - 0.5 * rl_stds), rl_mfpts + 0.5 * rl_stds, alpha=0.2, color="#2b5c8f")
+        axes[0, 0].plot(markov_b, markov_mfpt, marker="s", lw=2.0, ls="--", color="#d95f02", label="Exact Markov Chain Benchmark")
+        axes[0, 0].axvline(1, color="#e41a1c", ls=":", lw=1.8, label="Phase Transition $b_c = 1$")
+        axes[0, 0].axvspan(3, 10, color="gray", alpha=0.12, label="Berg-Purcell Saturation ($b \\geq 3$)")
+        axes[0, 0].set_title("(a) Mean Escape Time vs Memory Bits $b$")
+        axes[0, 0].set_xlabel("Memory Budget $b$ (Bits, $2^b$ internal states)")
+        axes[0, 0].set_ylabel("Mean First-Passage Time $\\langle T_{\\mathrm{esc}} \\rangle$ (s)")
+        axes[0, 0].set_xticks(b_vals)
+        axes[0, 0].legend(frameon=True, fontsize=9)
+
+        # Panel (b): Rate-Distortion Pareto Frontier
+        exp6 = data9["experiment_6_landauer_pareto"]
+        p_bits = exp6["pareto_bits"]
+        p_rates = exp6["pareto_rates"]
+        all_bits = exp6["memory_bits"]
+        all_rates = exp6["escape_rates"]
+
+        axes[0, 1].plot(all_bits, all_rates, marker="o", lw=1.8, color="#7570b3", alpha=0.7, label="All Memory Policies")
+        axes[0, 1].plot(p_bits, p_rates, marker="*", markersize=10, lw=2.5, color="#1b9e77", label="Pareto-Optimal Frontier $J^*(R)$")
+        axes[0, 1].set_title("(b) Rate-Distortion Frontier $J^*(R) = 1 / \\langle T_{\\mathrm{esc}} \\rangle^*$")
+        axes[0, 1].set_xlabel("Information Budget $R \\leq b$ (Bits)")
+        axes[0, 1].set_ylabel("Escape Rate $J^*$ ($s^{-1}$)")
+        axes[0, 1].legend(frameon=True, fontsize=9)
+
+        # Panel (c): Landauer Net Cost Minimization
+        beta_palette = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e"]
+        betas = [0.001, 0.01, 0.05, 0.10, 0.50]
+        for idx, beta in enumerate(betas):
+            c_tot = np.array(exp6["mfpt_values"]) + beta * np.array(exp6["erasure_costs"])
+            col = beta_palette[idx % len(beta_palette)]
+            opt_idx = np.argmin(c_tot)
+            axes[1, 0].plot(b_vals, c_tot, marker="o", lw=2, color=col, label=f"$\\beta = {beta}$ ($b^* = {b_vals[opt_idx]}$)")
+            axes[1, 0].scatter([b_vals[opt_idx]], [c_tot[opt_idx]], s=90, color=col, edgecolors="k", zorder=5)
+
+        axes[1, 0].set_title("(c) Landauer Net Cost $\\mathcal{C}_{\\mathrm{total}}(b) = \\langle T \\rangle + \\beta b k_B T \\ln 2$")
+        axes[1, 0].set_xlabel("Memory Budget $b$ (Bits)")
+        axes[1, 0].set_ylabel("Net Dissipation-Weighted Cost")
+        axes[1, 0].set_xticks(b_vals)
+        axes[1, 0].legend(frameon=True, fontsize=9)
+
+        # Panel (d): Asymmetry Ratio a1 / a2 Sweep
+        exp5 = data9["experiment_5_asymmetry"]["asymmetry_sweep"]
+        ratios = [row["ratio_a1_a2"] for row in exp5]
+        t_b0 = [row["mfpt_b0"] for row in exp5]
+        t_b1 = [row["mfpt_b1"] for row in exp5]
+        t_b4 = [row["mfpt_b4"] for row in exp5]
+
+        axes[1, 1].plot(ratios, t_b0, marker="^", lw=2, color="#e7298a", label="$b=0$ (Memoryless)")
+        axes[1, 1].plot(ratios, t_b1, marker="s", lw=2, color="#d95f02", label="$b=1$ (1-Bit)")
+        axes[1, 1].plot(ratios, t_b4, marker="o", lw=2.5, color="#1b9e77", label="$b=4$ (Multi-Bit Filtered)")
+        axes[1, 1].set_yscale("log")
+        axes[1, 1].set_title("(d) Landscape Asymmetry Scaling ($a_1 / a_2$)")
+        axes[1, 1].set_xlabel("Trap Peak Ratio $a_1 / a_2$")
+        axes[1, 1].set_ylabel("Escape Time $\\langle T_{\\mathrm{esc}} \\rangle$ (s, log scale)")
+        axes[1, 1].legend(frameon=True, fontsize=9)
+
+        plt.tight_layout()
+        fig_path7 = os.path.join(fig_dir, "fig7_memory_scaling_pareto.png")
+        fig.savefig(fig_path7, dpi=300)
+        plt.close(fig)
+        print("  Saved:", fig_path7)
+
+        # -------------------------------------------------------------
+        # Figure 8: Information Dynamics, Berg-Purcell & Noise Phase Space
+        # -------------------------------------------------------------
+        fig, axes = plt.subplots(2, 2, figsize=(15, 11))
+
+        # Panel (a): Mutual Information Decay vs Lag k
+        exp2 = data9["experiment_2_mutual_information"]
+        mi_colors = {"1": "#1b9e77", "2": "#d95f02", "4": "#7570b3", "8": "#e7298a"}
+        for b_str, mi_item in exp2.items():
+            lags = mi_item["lags"]
+            mi_vals = mi_item["mutual_information"]
+            k_eff = mi_item["effective_horizon"]
+            col = mi_colors.get(b_str, "#2b5c8f")
+            axes[0, 0].plot(lags, mi_vals, marker="o", lw=2, color=col, label=f"Nominal $b={b_str}$ ($k_{{eff}}={k_eff}$ lags)")
+
+        axes[0, 0].axhline(0.05, color="gray", ls=":", label="Significance Threshold (0.05 bits)")
+        axes[0, 0].set_title("(a) Action-Sensory Mutual Information $I(a_t; \\tilde{c}_{t-k})$")
+        axes[0, 0].set_xlabel("Temporal Measurement Lag $k$ (Timesteps)")
+        axes[0, 0].set_ylabel("Mutual Information (Bits)")
+        axes[0, 0].legend(frameon=True, fontsize=9)
+
+        # Panel (b): Berg-Purcell SNR & Fidelity Saturation
+        exp3 = data9["experiment_3_berg_purcell"]
+        bits_bp = np.array(exp3["memory_bits"])
+        snr_bp = np.array(exp3["snr_bp"])
+        fid_bp = np.array(exp3["fidelity"])
+
+        ax_b_twin = axes[0, 1].twinx()
+        l1 = axes[0, 1].plot(bits_bp, snr_bp, marker="s", lw=2.2, color="#2b5c8f", label="Berg-Purcell SNR $\\propto \\tau^{3/2}$")
+        l2 = ax_b_twin.plot(bits_bp, fid_bp * 100, marker="o", lw=2.2, color="#1b9e77", label="Effective Signal Fidelity (%)")
+        axes[0, 1].axvline(exp3["b_star_theoretical"], color="#e41a1c", ls="--", label=f"Theoretical Saturation $b^* \\approx {exp3['b_star_theoretical']:.1f}$")
+
+        lines = l1 + l2 + [axes[0, 1].lines[-1]]
+        labels = [l.get_label() for l in lines]
+        axes[0, 1].legend(lines, labels, frameon=True, fontsize=9, loc="center right")
+        axes[0, 1].set_title("(b) Berg-Purcell Physical Sensing Bound")
+        axes[0, 1].set_xlabel("Memory Budget $b$ (Bits)")
+        axes[0, 1].set_ylabel("Signal-to-Noise Ratio (SNR)", color="#2b5c8f")
+        ax_b_twin.set_ylabel("Fidelity (%)", color="#1b9e77")
+        ax_b_twin.grid(False)
+
+        # Panel (c) & (d): Dual-Noise 2D Heatmaps (sigma x D)
+        exp4 = data9["experiment_4_dual_noise"]
+        sigmas = exp4["sigma_vals"]
+        Ds = exp4["D_vals"]
+        grid_b1 = np.array(exp4["grid_mfpt_b1"])
+        grid_b4 = np.array(exp4["grid_mfpt_b4"])
+
+        im_c = axes[1, 0].imshow(grid_b1, origin="lower", cmap="viridis", aspect="auto",
+                                 extent=[min(Ds), max(Ds), min(sigmas), max(sigmas)])
+        fig.colorbar(im_c, ax=axes[1, 0], label="$\\langle T_{\\mathrm{esc}} \\rangle$ (s)")
+        axes[1, 0].set_title("(c) 2D Phase Diagram: $b=1$ (1-Bit Sensor)")
+        axes[1, 0].set_xlabel("Brownian Diffusivity $D$")
+        axes[1, 0].set_ylabel("Sensing Noise $\\sigma$")
+
+        im_d = axes[1, 1].imshow(grid_b4, origin="lower", cmap="viridis", aspect="auto",
+                                 extent=[min(Ds), max(Ds), min(sigmas), max(sigmas)])
+        fig.colorbar(im_d, ax=axes[1, 1], label="$\\langle T_{\\mathrm{esc}} \\rangle$ (s)")
+        axes[1, 1].set_title("(d) 2D Phase Diagram: $b=4$ (Filtered Multi-Bit)")
+        axes[1, 1].set_xlabel("Brownian Diffusivity $D$")
+        axes[1, 1].set_ylabel("Sensing Noise $\\sigma$")
+
+        plt.tight_layout()
+        fig_path8 = os.path.join(fig_dir, "fig8_information_noise_phase.png")
+        fig.savefig(fig_path8, dpi=300)
+        plt.close(fig)
+        print("  Saved:", fig_path8)
+
     print("All figures successfully generated and saved to:", fig_dir)
 
 

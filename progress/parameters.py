@@ -61,3 +61,20 @@ LANDSCAPE_PRESETS = {
         "name": "Deep Trap (Delta U ~ 0.85 - 1.10)"
     }
 }
+
+
+# Phase 2 (Step 9+) Multi-Bit & Information-Theoretic Sweeps
+MEMORY_BIT_SWEEP = [0, 1, 2, 3, 4, 5, 6, 8, 10]
+
+DUAL_NOISE_SWEEP = {
+    "sigma_vals": [0.02, 0.05, 0.10, 0.20, 0.40],
+    "D_vals": [0.0, 0.001, 0.01, 0.05, 0.10]
+}
+
+ASYMMETRY_RATIOS = [0.5, 0.75, 1.0, 1.33, 2.0]
+
+THERMODYNAMIC_PARAMS = {
+    "kB_T": 1.0,               # Normalized thermal energy unit
+    "ln2": 0.69314718056,      # Natural log 2 (Landauer constant per bit)
+    "beta_sweep": [0.0, 0.001, 0.005, 0.01, 0.02, 0.05, 0.10, 0.25, 0.50, 1.0]
+}
