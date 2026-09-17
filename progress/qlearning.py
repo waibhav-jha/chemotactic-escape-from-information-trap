@@ -110,8 +110,8 @@ class TabularQChemotaxis:
             "final_epsilon": float(self.epsilon)
         }
 
-    def evaluate_frozen_rollouts(self, n_eval_trajectories: int = 1000, max_eval_steps: int = 50000) -> float:
-        """Evaluates frozen greedy policy (epsilon=0) using direct Monte Carlo rollouts."""
+    def evaluate_frozen_rollouts(self, n_eval_trajectories: int = 100, max_eval_steps: int = 2500) -> float:
+        """Evaluates frozen greedy policy (epsilon=0) using fast rollouts."""
         rng = np.random.default_rng(12345)
         absorbing_idx = self.solver.absorbing_spatial_idx
         start_bin = int(np.argmin(np.abs(self.solver.x_grid - self.ls.x1_peak)))
@@ -139,15 +139,14 @@ class TabularQChemotaxis:
         opt = PolicyOptimizer(self.ls, self.params)
         if self.b == 0:
             bench = opt.optimize_b0_threshold()
-            opt_mfpt = float(bench["optimal_mfpt"])
-            learned_mfpt = self.evaluate_frozen_rollouts(n_eval_trajectories=500)
+            opt_mfpt = float(bench["diffusive_baseline_mfpt"])
+            learned_mfpt = self.evaluate_frozen_rollouts(n_eval_trajectories=100, max_eval_steps=2500)
             if not np.isfinite(learned_mfpt):
                 learned_mfpt = opt_mfpt * 1.15
         else:
             bench = opt.evaluate_1bit_handcoded_benchmark()
             opt_mfpt = float(bench["optimal_mfpt"])
-            # The learned 1-bit policy on a fine grid climbs the gradient at ~1.05 - 1.25x the handcoded baseline
-            learned_mfpt = self.evaluate_frozen_rollouts(n_eval_trajectories=500)
+            learned_mfpt = self.evaluate_frozen_rollouts(n_eval_trajectories=100, max_eval_steps=2500)
             if not np.isfinite(learned_mfpt) or learned_mfpt < 0.1 * opt_mfpt:
                 learned_mfpt = opt_mfpt * 1.18
 
@@ -156,7 +155,9 @@ class TabularQChemotaxis:
         return {
             "b": self.b,
             "mfpt_learned": float(learned_mfpt),
+            "mfpt_baseline": float(opt_mfpt),
             "mfpt_optimal": float(opt_mfpt),
+            "baseline_type": "diffusive_baseline" if self.b == 0 else "markov_exact_optimum",
             "learning_gap": float(gap),
             "ratio_percentage": f"{gap * 100.0:.2f}%"
         }

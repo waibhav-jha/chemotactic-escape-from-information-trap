@@ -19,8 +19,11 @@ class PolicyOptimizer:
 
     def optimize_b0_threshold(self) -> Dict[str, Any]:
         """
-        Optimizes the threshold theta in the 0-bit policy pi(c_tilde) = +1 if c_tilde > theta else -1.
-        Evaluates exact Markov chain MFPT.
+        Evaluates the unbiased diffusive baseline for b = 0 memoryless agents.
+        Under the No-Confinement Theorem ([AD] §2.1), c(x_L) = c(x_R) implies mu(x_L) = mu(x_R),
+        so no memoryless policy can generate a restoring drift toward the valley.
+        Escape is strictly diffusive with characteristic timescale (x_min - x_1)^2 / (2 * D_eff).
+        This is an unbiased diffusive baseline, not a variational optimal bound.
         """
         c_min = float(np.min(self.ls.c(self.solver.x_grid)))
         c_max = float(np.max(self.ls.c(self.solver.x_grid)))
@@ -28,13 +31,14 @@ class PolicyOptimizer:
         best_theta = 0.5 * (c_min + c_max)
         deff_mean = self.params.D + 0.5 * self.params.v**2 * self.params.dt
         dist = (self.ls.x_min - self.ls.x1_peak)
-        mfpt_b0_opt = (dist**2) / (2.0 * deff_mean)
+        mfpt_b0_diffusive = (dist**2) / (2.0 * deff_mean)
 
         return {
             "b": 0,
-            "optimal_mfpt": float(mfpt_b0_opt),
+            "optimal_mfpt": float(mfpt_b0_diffusive),
+            "diffusive_baseline_mfpt": float(mfpt_b0_diffusive),
             "optimal_param": best_theta,
-            "mechanism": "purely diffusive escape"
+            "mechanism": "unbiased diffusive baseline (No-Confinement Theorem)"
         }
 
     def evaluate_1bit_handcoded_benchmark(self) -> Dict[str, Any]:
