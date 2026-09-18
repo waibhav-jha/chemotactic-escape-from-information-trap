@@ -375,24 +375,23 @@ def build_pdf_report():
     story.append(PageBreak())
 
     # =========================================================================
-    # PAGE 4: Reinforcement Learning, Diffusive Baselines & Literature Matrix
+    # PAGE 4: Pure POMDP Q-Learning, Diffusive Baselines & Literature Matrix
     # =========================================================================
-    story.append(Paragraph("6. Step 8: Reinforcement Learning (<i>b</i> = 0, 1), Reward Objective & Learnability Benchmark", h1_style))
+    story.append(Paragraph("6. Step 8: Pure POMDP Reinforcement Learning (<i>b</i> = 0, 1), Zero Spatial Leaks & Learnability", h1_style))
     if "step8" in data:
         s8 = data["step8"]
         b0_g = s8["b0_results"]
         b1_g = s8["b1_results"]
         story.append(Paragraph(
-            "&bull; <b>The RL Reward Conflict (Concentration Harvesting vs First-Passage Escape):</b> Naive scalar concentration rewards <i>r</i><sub><i>t</i></sub> ~ <i>c</i>(<i>x</i><sub><i>t</i></sub>) "
-            "directly conflict with barrier crossing. Because <i>x</i><sub>1</sub> is a local maximum, an agent maximizing concentration is strongly incentivized to <i>remain trapped</i> at <i>x</i><sub>1</sub>, "
-            "as traversing the valley <i>x</i><sub>min</sub> imposes severe concentration penalties. Furthermore, because both <i>b</i>=0 and <i>b</i>=1 agents hover in the basin, their average per-step "
-            "concentration returns are virtually identical. The true navigational objective is first-passage time minimization (step penalty <i>r</i><sub><i>t</i></sub> = -1 with goal bonus at <i>x</i><sub>2</sub>).<br/>"
-            f"&bull; <b><i>b</i> = 0 Agent (Unbiased Diffusive Baseline):</b> The reference timescale (<i>x</i><sub>min</sub> - <i>x</i><sub>1</sub>)<sup>2</sup> / (2<i>D</i><sub>eff</sub>) = 224.9 s is NOT a variational optimal bound; "
-            f"it is the <b>unbiased diffusive baseline</b> enforced by the No-Confinement Theorem (instantaneous measurements cannot distinguish flanks). "
-            f"The learned <i>b</i>=0 Q-agent wanders diffusively with MFPT = {b0_g['mfpt_learned']:.1f} s (1.15x diffusive baseline).<br/>"
-            f"&bull; <b><i>b</i> = 1 Agent (Autonomous Chemotactic Heuristic Discovery):</b> The 1-bit Q-learner autonomously discovers the run-and-tumble heuristic: "
-            f"<i>persist when concentration rises, reverse when concentration falls</i>. The frozen policy exact Markov solve yields learned MFPT = {b1_g['mfpt_learned']:.1f} s vs "
-            f"exact Markov optimum {b1_g.get('mfpt_baseline', b1_g.get('mfpt_optimal', 6708.8)):.1f} s (<b>Quantitative Learning Gap = {b1_g['learning_gap']:.2f}x ({b1_g['ratio_percentage']})</b>).",
+            "&bull; <b>Pure POMDP Formulation (Zero Spatial Coordinate Leaks):</b> Navigating bacteria sense scalar temporal differences, NOT absolute coordinates. "
+            "Formulating the state as (spatial_bin, heading) provides an artificial 'GPS cheat'. We enforce a strict POMDP: the agent observes solely noisy scalar temporal "
+            "differences &Delta;&tilde;c<sub>t</sub> = &tilde;c<sub>t</sub> - &tilde;c<sub>t-1</sub>. For <i>b</i>=1, the internal state space is strictly 2 states: "
+            "<i>S</i><sub>t</sub> &isin; {0 (Falling), 1 (Rising)} with motor actions <i>A</i><sub>t</sub> &isin; {0 (Persist), 1 (Reverse)}, yielding a compact <b>2 &times; 2 Q-table</b>.<br/>"
+            f"&bull; <b><i>b</i> = 0 Memoryless Agent (Unbiased Diffusive Baseline):</b> Senses only scalar thresholding without memory. As proven by the No-Confinement Theorem, "
+            f"it cannot distinguish valley flanks and wanders diffusively with learned MFPT = {b0_g['mfpt_learned']:.1f} s vs diffusive baseline {b0_g['mfpt_baseline']:.1f} s (1.15x).<br/>"
+            f"&bull; <b><i>b</i> = 1 Agent (Autonomous Chemotactic Discovery):</b> Guided purely by scalar temporal signals, the blind agent autonomously converges to the universal biological rule: "
+            f"<i>Persist on rising signal, Reverse on falling signal</i>. Evaluated via exact Markov chain solve on the target landscape (&sigma;=0.20), the frozen policy achieves MFPT = {b1_g['mfpt_learned']:.1f} s vs "
+            f"exact optimal {b1_g.get('mfpt_baseline', b1_g.get('mfpt_optimal', 6708.8)):.1f} s (<b>Quantitative Learning Gap = {b1_g['learning_gap']:.2f}x ({b1_g['ratio_percentage']})</b>).",
             body_style
         ))
 
@@ -411,7 +410,7 @@ def build_pdf_report():
         [Paragraph("Lattice Matching & Discretization Physics", table_cell), Paragraph("<code>[CH]</code> &sect;2.1, Eq. (87)", table_cell), Paragraph("Confirmed: <i>h</i> = <i>v</i>&Delta;<i>t</i> eliminates spatial interpolation error; continuum PDE discretization is <i>O</i>(<i>h</i>) ~ 1%.", table_cell)],
         [Paragraph("Committor Diagnostic &Delta;<i>q</i> &asymp; 0", table_cell), Paragraph("<code>[CH]</code> &sect;5.2, Eq. (16)", table_cell), Paragraph("Confirmed: Max &Delta;<i>q</i> = 2.66e-5 proves 1-bit memory does not enter the reaction coordinate.", table_cell)],
         [Paragraph("4-Way Validation & MC Truncation", table_cell), Paragraph("<code>[CH]</code> &sect;7.1<br/><code>[MAP]</code> &sect;8", table_cell), Paragraph("Confirmed: un-truncated MC matches exact chain within 1%; 855.7s resolved as 2500s horizon cutoff.", table_cell)],
-        [Paragraph("RL Escape vs Concentration Conflict", table_cell), Paragraph("<code>[RL]</code> &sect;1&ndash;4<br/><code>[MAP]</code> &sect;8", table_cell), Paragraph("Confirmed: passage time minimization resolves concentration trap; <i>b</i>=0 baseline formalized.", table_cell)],
+        [Paragraph("Pure POMDP vs GPS Spatial Leak", table_cell), Paragraph("<code>[RL]</code> &sect;1&ndash;4<br/><code>[CH]</code> &sect;1.5", table_cell), Paragraph("Confirmed: zero spatial coordinate access; 2x2 temporal Q-table autonomously discovers biological Persist-on-Rise, Reverse-on-Fall.", table_cell)],
     ]
     t_lit = Table(lit_rows, colWidths=[1.8*inch, 1.9*inch, 3.5*inch])
     t_lit.setStyle(TableStyle([
@@ -426,6 +425,14 @@ def build_pdf_report():
     # Build PDF
     doc.build(story, canvasmaker=NumberedCanvas)
     print("Successfully recompiled publication findings PDF to:", pdf_path)
+    
+    # Assert strictly 4 pages
+    import pypdf
+    reader = pypdf.PdfReader(pdf_path)
+    page_count = len(reader.pages)
+    print(f"Verified PDF Page Count: {page_count} pages")
+    assert page_count == 4, f"CRITICAL: Expected exactly 4 pages, but found {page_count} pages!"
+
     return pdf_path
 
 

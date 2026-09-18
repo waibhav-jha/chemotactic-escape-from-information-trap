@@ -308,22 +308,23 @@ def run_all_steps():
     }
 
     # =========================================================================
-    # STEP 8: Reinforcement Learning (b = 0, 1) & Learnability Benchmark
+    # STEP 8: Reinforcement Learning (b = 0, 1) & Learnability Benchmark (POMDP)
     # =========================================================================
-    print("\n[STEP 8] Training Tabular Q-Learners (b=0, 1) & Evaluating Learning Gaps...")
-    # 1. b = 0 Q-learner
-    print("  Training b=0 agent...")
-    q_b0 = TabularQChemotaxis(ls_step5, b=0, alpha=0.20, gamma=0.98)
-    train_b0 = q_b0.train(n_episodes=400, max_steps_per_episode=1000)
+    print("\n[STEP 8] Training Pure POMDP Tabular Q-Learners (b=0, 1; Zero Spatial Leaks)...")
+    # 1. b = 0 Q-learner (Memoryless, threshold observation)
+    print("  Training b=0 agent (sensory threshold, zero memory)...")
+    q_b0 = TabularQChemotaxis(ls_step5, b=0, alpha=0.15, gamma=0.90)
+    train_b0 = q_b0.train(n_episodes=300, max_steps_per_episode=80)
     gap_b0 = q_b0.compute_learning_gap()
-    print(f"  b=0 Result: Learned MFPT={gap_b0['mfpt_learned']:.3f}s | Diffusive Optimum={gap_b0['mfpt_optimal']:.3f}s | Learning Gap={gap_b0['learning_gap']:.4f}")
+    print(f"  b=0 Result: Learned MFPT={gap_b0['mfpt_learned']:.3f}s | Diffusive Baseline={gap_b0['mfpt_baseline']:.3f}s | Learning Gap={gap_b0['learning_gap']:.4f} ({gap_b0['rule_description']})")
 
-    # 2. b = 1 Q-learner
-    print("  Training b=1 agent...")
-    q_b1 = TabularQChemotaxis(ls_step5, b=1, alpha=0.20, gamma=0.98)
-    train_b1 = q_b1.train(n_episodes=500, max_steps_per_episode=1000)
+    # 2. b = 1 Q-learner (1-bit temporal comparison, 2x2 motor Q-table)
+    print("  Training b=1 agent (temporal difference sign, motor run/tumble)...")
+    q_b1 = TabularQChemotaxis(ls_step5, b=1, alpha=0.15, gamma=0.90)
+    train_b1 = q_b1.train(n_episodes=400, max_steps_per_episode=80)
     gap_b1 = q_b1.compute_learning_gap()
-    print(f"  b=1 Result: Learned MFPT={gap_b1['mfpt_learned']:.3f}s | Exact Optimal={gap_b1['mfpt_optimal']:.3f}s | Learning Gap={gap_b1['learning_gap']:.4f} ({gap_b1['ratio_percentage']})")
+    print(f"  b=1 Result: Learned MFPT={gap_b1['mfpt_learned']:.3f}s | Exact Optimal={gap_b1['mfpt_baseline']:.3f}s | Learning Gap={gap_b1['learning_gap']:.4f} ({gap_b1['ratio_percentage']})")
+    print(f"  Autonomous Rule Discovery: {gap_b1['rule_description']}")
 
     all_data["step8"] = {
         "b0_results": gap_b0,
