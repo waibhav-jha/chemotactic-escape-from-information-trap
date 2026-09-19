@@ -9,17 +9,18 @@ sharp high-resolution figures, and comprehensive resolution of all peer-review c
 4. Slope shortfall resolved as prefactor curvature variation tau_0 propto a1^(-1/2); corrected slope is 1.109 ~ 2/sqrt(pi).
 5. RL objective clarified: concentration reward conflict vs passage time minimization, and b=0 diffusive baseline formalized.
 """
+# pyright: reportMissingModuleSource=false
 import os
 import sys
 import json
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.lib.units import inch
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import (
+from reportlab.lib.pagesizes import letter  # type: ignore
+from reportlab.lib import colors  # type: ignore
+from reportlab.lib.units import inch  # type: ignore
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  # type: ignore
+from reportlab.platypus import (  # type: ignore
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak, HRFlowable
 )
-from reportlab.pdfgen import canvas
+from reportlab.pdfgen import canvas  # type: ignore
 
 
 class NumberedCanvas(canvas.Canvas):
