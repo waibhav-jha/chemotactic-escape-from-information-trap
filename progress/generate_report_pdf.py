@@ -23,13 +23,21 @@ from reportlab.pdfgen import canvas
 
 
 class NumberedCanvas(canvas.Canvas):
+    """
+    Two-pass canvas for dynamic total page count calculation and header/footer rendering.
+    Uses safe attribute access to prevent IDE type-checker warnings on dynamic runtime members.
+    """
     def __init__(self, *args, **kwargs):
         super(NumberedCanvas, self).__init__(*args, **kwargs)
         self._saved_page_states = []
 
     def showPage(self):
         self._saved_page_states.append(dict(self.__dict__))
-        self._startPage()
+        start_page_fn = getattr(super(NumberedCanvas, self), "_startPage", None)
+        if callable(start_page_fn):
+            start_page_fn()
+        elif hasattr(self, "_startPage") and callable(getattr(self, "_startPage")):
+            getattr(self, "_startPage")()
 
     def save(self):
         num_pages = len(self._saved_page_states)
@@ -39,19 +47,20 @@ class NumberedCanvas(canvas.Canvas):
             super(NumberedCanvas, self).showPage()
         super(NumberedCanvas, self).save()
 
-    def draw_header_footer(self, page_count):
+    def draw_header_footer(self, page_count: int):
         self.saveState()
         self.setFont("Helvetica", 8)
         self.setFillColor(colors.HexColor("#555555"))
+        current_page = getattr(self, "_pageNumber", 1)
         # Header (pages > 1)
-        if self._pageNumber > 1:
+        if current_page > 1:
             self.drawString(54, 750, "Chemotactic Escape from Information Traps — Research Findings Report (Steps 1 to 8)")
             self.setStrokeColor(colors.HexColor("#cbd5e0"))
             self.setLineWidth(0.5)
             self.line(54, 742, 558, 742)
 
         # Footer
-        page_text = f"Page {self._pageNumber} of {page_count}"
+        page_text = f"Page {current_page} of {page_count}"
         self.drawRightString(558, 36, page_text)
         self.drawString(54, 36, "CONFIDENTIAL & PROPRIETARY — ACADEMIC RESEARCH FINDINGS")
         self.setStrokeColor(colors.HexColor("#cbd5e0"))
