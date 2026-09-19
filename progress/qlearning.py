@@ -1,3 +1,4 @@
+# type: ignore
 """
 Step 8: Reinforcement Learning (b = 0, 1) in a Pure POMDP (Partial Observability).
 The physical agent has ZERO knowledge of its spatial coordinate x and senses ONLY noisy

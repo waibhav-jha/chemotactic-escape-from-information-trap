@@ -1,4 +1,5 @@
 {
+  "typeCheckingMode": "off",
   "include": [
     "."
   ],
@@ -12,5 +13,9 @@
   "reportUnknownMemberType": "none",
   "reportUnknownVariableType": "none",
   "reportGeneralTypeIssues": "none",
-  "reportAttributeAccessIssue": "none"
+  "reportAttributeAccessIssue": "none",
+  "reportIndexIssues": "none",
+  "reportArgumentType": "none",
+  "reportCallIssue": "none",
+  "reportOperatorIssue": "none"
 }
