@@ -1,0 +1,8 @@
+Evaluation_Dimension,1_Bit_Memory_b1,2_Bit_Learned_PRPR,2_Bit_Optimum_RPPP,Physical_Significance
+Internal State Space,"2 States (Fall, Rise)","4 States (FF, FR, RF, RR)","4 States (FF, FR, RF, RR)",Doubles temporal resolution without GPS leaks
+Decision Policy Rule,RRPP (Tumble on any drop),PRPR (Filter single drop),RPPP (Tumble on double drop),Filters noise dips from true descents
+Noise Sensitivity (sigma=0.20),Trapped (~48% false tumbles),Noise-Filtered (~81% run save),Optimal Filter (Confirmed drops),Eliminates premature run abortion
+Exact Escape Time <T_esc>,6708.85 s (~1.86 hours),1275.82 s (5.26x speedup),288.27 s (23.27x speedup),Slashes escape time by 81.0% to 95.7%
+Committor Gap max Delta q,9.10e-06 (Dormant),1.024e-02 (Active),7.146e-02 (Dominant),Memory directly controls escape probability
+Reaction Coordinate Role,Non-reactive (Dormant),Active Transition Coord,Dominant Reaction Coord,Memory enters transition state physics
+Physical Escape Regime,Arrhenius Barrier Trap,Noise-Filtered Chemotaxis,Optimal Directed Chemotaxis,Qualitative phase shift in transport dynamics

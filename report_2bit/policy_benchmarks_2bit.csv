@@ -1,0 +1,17 @@
+Rank,Policy_Name,Rule_Vector_S0_S1_S2_S3,Exact_MFPT_s,Speedup_vs_1Bit,Behavior_Role
+1,RPPP,"[Reverse, Persist, Persist, Persist]",288.27,23.27x,Global Theoretical Optimum
+2,PPPR,"[Persist, Persist, Persist, Reverse]",710.63,9.44x,Persistent run bias
+3,PPRP,"[Persist, Persist, Reverse, Persist]",1267.31,5.29x,Asymmetric filter
+4,PRPP,"[Persist, Reverse, Persist, Persist]",1267.35,5.29x,Asymmetric filter
+5,PRPR,"[Persist, Reverse, Persist, Reverse]",1275.82,5.26x,Autonomously Learned by RL
+6,RPRP,"[Reverse, Persist, Reverse, Persist]",1275.9,5.26x,Symmetric temporal filter
+7,PRRP,"[Persist, Reverse, Reverse, Persist]",1276.64,5.26x,Intermediate temporal filter
+8,RPPR,"[Reverse, Persist, Persist, Reverse]",1277.14,5.25x,Intermediate temporal filter
+9,PRRR,"[Persist, Reverse, Reverse, Reverse]",1289.3,5.20x,Tumble-heavy filter
+10,RRRP,"[Reverse, Reverse, Reverse, Persist]",1289.49,5.20x,Tumble-heavy filter
+11,RRPP,"[Reverse, Reverse, Persist, Persist]",6708.85,1.00x,Standard 1-bit heuristic baseline
+12,PPRR,"[Persist, Persist, Reverse, Reverse]",47405.6,0.14x,Severe trapping (reverse on rise)
+13,RRPR,"[Reverse, Reverse, Persist, Reverse]",1369860.12,0.005x,Pathologically trapped
+14,RPRR,"[Reverse, Persist, Reverse, Reverse]",39490246.39,0.0002x,Pathologically trapped
+15,PPPP,"[Persist, Persist, Persist, Persist]",Infinity,0.00x,Non-ergodic / absorbing boundary
+16,RRRR,"[Reverse, Reverse, Reverse, Reverse]",Infinity,0.00x,Non-ergodic / 2-step oscillation

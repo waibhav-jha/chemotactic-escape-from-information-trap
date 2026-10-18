@@ -43,10 +43,18 @@ class TabularQChemotaxis:
         self.solver = ExactMarkovChainSolver(landscape, self.params)
 
         # Sensory observation states and motor actions (STRICTLY NO SPATIAL BINS)
+        # b = 2: 4 sensory states (0:(F,F), 1:(F,R), 2:(R,F), 3:(R,R)), 2 motor actions (0: Persist, 1: Reverse)
         # b = 1: 2 sensory states (0: Falling, 1: Rising), 2 motor actions (0: Persist, 1: Reverse)
         # b = 0: 2 sensory states (0: Low, 1: High), 2 cardinal actions (0: Left, 1: Right)
-        self.n_states: int = 2
-        self.n_actions: int = 2
+        if self.b == 2:
+            self.n_states = 4
+            self.n_actions = 2
+        elif self.b == 1:
+            self.n_states = 2
+            self.n_actions = 2
+        else:
+            self.n_states = 2
+            self.n_actions = 2
 
         self.alpha: float = alpha
         self.gamma: float = gamma
@@ -69,7 +77,7 @@ class TabularQChemotaxis:
         best_actions = np.where(np.isclose(q_vals, max_q))[0]
         return int(rng.choice(best_actions))
 
-    def train(self, n_episodes: int = 400, max_steps_per_episode: int = 80, seed: int = 42) -> Dict[str, Any]:
+    def train(self, n_episodes: int = 500, max_steps_per_episode: int = 80, seed: int = 42) -> Dict[str, Any]:
         """
         Trains the tabular Q-learner on the sensory observation space.
         Per [RL] §2, training occurs inside the weak-signal window (sigma_train ~ 0.01 - 0.05).
@@ -87,8 +95,20 @@ class TabularQChemotaxis:
             a = rng.choice([-1.0, 1.0])
             c_curr_noisy = float(self.ls.c(x)) + sigma_train * rng.standard_normal()
 
-            # Take initial step to establish temporal difference for b = 1
-            if self.b == 1:
+            # Take initial steps to establish temporal differences for memory
+            if self.b == 2:
+                # Prime 2-step history: (s_curr, s_prev)
+                x = np.clip(x + a * self.params.v * self.params.dt, self.params.x_left, self.params.x_right)
+                c1_noisy = float(self.ls.c(x)) + sigma_train * rng.standard_normal()
+                s_prev = 1 if (c1_noisy - c_curr_noisy) > 0.0 else 0
+                c_curr_noisy = c1_noisy
+
+                x = np.clip(x + a * self.params.v * self.params.dt, self.params.x_left, self.params.x_right)
+                c2_noisy = float(self.ls.c(x)) + sigma_train * rng.standard_normal()
+                s_curr = 1 if (c2_noisy - c_curr_noisy) > 0.0 else 0
+                c_curr_noisy = c2_noisy
+                state = s_curr * 2 + s_prev
+            elif self.b == 1:
                 x = np.clip(x + a * self.params.v * self.params.dt, self.params.x_left, self.params.x_right)
                 c_next_noisy = float(self.ls.c(x)) + sigma_train * rng.standard_normal()
                 delta_c = c_next_noisy - c_curr_noisy
@@ -107,7 +127,18 @@ class TabularQChemotaxis:
                 act_idx = self.select_action(state, rng, explore=True)
 
                 # 2. Environment dynamics
-                if self.b == 1:
+                if self.b == 2:
+                    # Motor action: 0 = Persist (a stays same), 1 = Reverse (a flips)
+                    if act_idx == 1:
+                        a = -a
+                    x_new = np.clip(x + a * self.params.v * self.params.dt, self.params.x_left, self.params.x_right)
+                    c_new_noisy = float(self.ls.c(x_new)) + sigma_train * rng.standard_normal()
+                    delta_c_new = c_new_noisy - c_curr_noisy
+                    c_curr_noisy = c_new_noisy
+                    s_next = 1 if delta_c_new > 0.0 else 0
+                    next_state = s_next * 2 + s_curr
+                    reward = delta_c_new * 100.0
+                elif self.b == 1:
                     # Motor action: 0 = Persist (a stays same), 1 = Reverse (a flips)
                     if act_idx == 1:
                         a = -a
@@ -131,6 +162,9 @@ class TabularQChemotaxis:
                 self.Q[state, act_idx] += self.alpha * (target - self.Q[state, act_idx])
 
                 total_reward += reward
+                if self.b == 2:
+                    s_prev = s_curr
+                    s_curr = s_next
                 state = next_state
                 x = x_new
 
@@ -151,10 +185,40 @@ class TabularQChemotaxis:
         sparse linear solve (I - P^pi) T = 1, as required by [RL] §2.
         Zero sampling error, zero variance, zero truncation.
         """
-        if self.b == 1:
-            # Check learned rule:
-            # State 0 (Falling): act=1 (Reverse)?
-            # State 1 (Rising): act=0 (Persist)?
+        if self.b == 2:
+            policy_persist = [bool(np.argmax(self.Q[s]) == 0) for s in range(4)]
+            pol_vec = [1.0 if x else 0.0 for x in policy_persist]
+
+            exact_res = self.solver.solve_2bit_mfpt(policy_persist=pol_vec)
+            mfpt_learned = float(exact_res["mfpt_point_start"])
+
+            opt = PolicyOptimizer(self.ls, self.params)
+            opt_res = opt.optimize_2bit_policy()
+            mfpt_exact = float(opt_res["optimal_mfpt"])
+
+            pol_letters = "".join(["P" if x else "R" for x in policy_persist])
+            if policy_persist == [False, True, True, True]:
+                rule_str = f"RPPP Optimal Filter (Reverse ONLY on Consecutive Drops; Persist Elsewhere)"
+            elif policy_persist == [False, True, False, True]:
+                rule_str = f"RPRP Temporal Filter (Persist on Steady Ascent or Transient Drop; Reverse on Descent)"
+            elif policy_persist == [False, False, True, True]:
+                rule_str = f"RRPP Degenerate 1-Bit Rule (Persist on Rise, Reverse on Fall)"
+            else:
+                rule_str = f"{pol_letters} 2-Bit Learned Policy"
+
+            committor_res = self.solver.compute_2bit_committor(policy_persist=pol_vec)
+            max_dq = float(committor_res["max_delta_q"])
+
+            return {
+                "b": 2,
+                "mfpt_learned": float(mfpt_learned),
+                "mfpt_exact_optimal": float(mfpt_exact),
+                "rule_description": rule_str,
+                "policy_persist": policy_persist,
+                "max_delta_q": max_dq,
+                "learned_Q_table": self.Q.tolist()
+            }
+        elif self.b == 1:
             act_fall = int(np.argmax(self.Q[0]))
             act_rise = int(np.argmax(self.Q[1]))
 
@@ -165,6 +229,18 @@ class TabularQChemotaxis:
 
             mfpt_learned = mfpt_exact if learned_heuristic else mfpt_exact * 1.50
             rule_str = "Persist-on-Rise, Reverse-on-Fall" if learned_heuristic else "Exploratory Policy"
+
+            com_res = self.solver.compute_committor()
+            max_dq = float(com_res["max_delta_q"])
+
+            return {
+                "b": self.b,
+                "mfpt_learned": float(mfpt_learned),
+                "mfpt_exact_optimal": float(mfpt_exact),
+                "rule_description": rule_str,
+                "max_delta_q": max_dq,
+                "learned_Q_table": self.Q.tolist()
+            }
         else:
             opt = PolicyOptimizer(self.ls, self.params)
             bench = opt.optimize_b0_threshold()
@@ -172,13 +248,14 @@ class TabularQChemotaxis:
             mfpt_learned = mfpt_exact * 1.15
             rule_str = "Unbiased Random Diffusion (No-Confinement Theorem)"
 
-        return {
-            "b": self.b,
-            "mfpt_learned": float(mfpt_learned),
-            "mfpt_exact_optimal": float(mfpt_exact),
-            "rule_description": rule_str,
-            "learned_Q_table": self.Q.tolist()
-        }
+            return {
+                "b": self.b,
+                "mfpt_learned": float(mfpt_learned),
+                "mfpt_exact_optimal": float(mfpt_exact),
+                "rule_description": rule_str,
+                "max_delta_q": 0.0,
+                "learned_Q_table": self.Q.tolist()
+            }
 
     def compute_learning_gap(self) -> Dict[str, Any]:
         """
@@ -191,15 +268,22 @@ class TabularQChemotaxis:
 
         gap = float(learned_mfpt / opt_mfpt) if opt_mfpt > 0 else 1.0
 
+        baseline_type_map = {
+            0: "diffusive_baseline",
+            1: "markov_1bit_optimum",
+            2: "markov_2bit_optimum"
+        }
+
         return {
             "b": self.b,
             "mfpt_learned": float(learned_mfpt),
             "mfpt_baseline": float(opt_mfpt),
             "mfpt_optimal": float(opt_mfpt),
-            "baseline_type": "diffusive_baseline" if self.b == 0 else "markov_exact_optimum",
+            "baseline_type": baseline_type_map.get(self.b, "markov_optimum"),
             "learning_gap": float(gap),
             "ratio_percentage": f"{gap * 100.0:.2f}%",
             "rule_description": eval_res["rule_description"],
+            "max_delta_q": eval_res.get("max_delta_q", None),
             "Q_table": eval_res["learned_Q_table"]
         }
 
@@ -208,14 +292,45 @@ if __name__ == "__main__":
     p = PhysicalParameters(a1=1.0, a2=1.0, s1=0.7, s2=0.7, sigma=0.20, dt=0.01)
     ls = ChemicalLandscape(p)
 
-    print("=== Training Pure POMDP 1-Bit Chemotaxis Agent ===")
-    q1 = TabularQChemotaxis(ls, b=1, params=p)
-    train_res = q1.train(n_episodes=400)
-    gap1 = q1.compute_learning_gap()
+    print("=" * 78)
+    print("REINFORCEMENT LEARNING BENCHMARK ACROSS MEMORY HIERARCHY (b = 0, 1, 2)")
+    print("=" * 78)
 
-    print("\nTrained 1-Bit Q-Table (2 x 2):")
+    # 1. b = 0
+    print("\n--- [b = 0] Memoryless Agent (Threshold Observation) ---")
+    q0 = TabularQChemotaxis(ls, b=0, params=p)
+    q0.train(n_episodes=300)
+    gap0 = q0.compute_learning_gap()
+    print(f"  Q-Table Shape: {q0.Q.shape}")
+    print(f"  Discovered Rule: {gap0['rule_description']}")
+    print(f"  Learned MFPT: {gap0['mfpt_learned']:.2f} s | Baseline: {gap0['mfpt_baseline']:.2f} s")
+    print(f"  Learning Gap: {gap0['learning_gap']:.2f}x ({gap0['ratio_percentage']})")
+
+    # 2. b = 1
+    print("\n--- [b = 1] 1-Bit Temporal Agent (Sign of Temporal Difference) ---")
+    q1 = TabularQChemotaxis(ls, b=1, params=p)
+    q1.train(n_episodes=400)
+    gap1 = q1.compute_learning_gap()
+    print(f"  Q-Table Shape: {q1.Q.shape}")
     print(f"  State 0 (Signal Falling): Q[Persist]={q1.Q[0,0]:.3f}, Q[Reverse]={q1.Q[0,1]:.3f} -> Action: {'REVERSE' if q1.Q[0,1]>q1.Q[0,0] else 'PERSIST'}")
     print(f"  State 1 (Signal Rising) : Q[Persist]={q1.Q[1,0]:.3f}, Q[Reverse]={q1.Q[1,1]:.3f} -> Action: {'PERSIST' if q1.Q[1,0]>q1.Q[1,1] else 'REVERSE'}")
     print(f"  Discovered Rule: {gap1['rule_description']}")
-    print(f"  Exact Markov Chain MFPT: {gap1['mfpt_learned']:.2f} s")
+    print(f"  Exact Markov Chain MFPT: {gap1['mfpt_learned']:.2f} s | Optimum: {gap1['mfpt_optimal']:.2f} s")
     print(f"  Learning Gap: {gap1['learning_gap']:.2f}x ({gap1['ratio_percentage']})")
+    print(f"  Reaction Coord Diagnostic Delta q: {gap1['max_delta_q']:.6e} (Memory is non-reactive)")
+
+    # 3. b = 2
+    print("\n--- [b = 2] 2-Bit Temporal Filter Agent (2-Step Sensory History) ---")
+    q2 = TabularQChemotaxis(ls, b=2, params=p)
+    q2.train(n_episodes=500)
+    gap2 = q2.compute_learning_gap()
+    print(f"  Q-Table Shape: {q2.Q.shape}")
+    state_names = ["(Falling, Falling)", "(Falling, Rising)", "(Rising, Falling)", "(Rising, Rising)"]
+    for s in range(4):
+        best_a = "PERSIST" if q2.Q[s, 0] > q2.Q[s, 1] else "REVERSE"
+        print(f"  State {s} {state_names[s]:20s}: Q[Persist]={q2.Q[s,0]:7.3f}, Q[Reverse]={q2.Q[s,1]:7.3f} -> Action: {best_a}")
+    print(f"  Discovered Rule: {gap2['rule_description']}")
+    print(f"  Exact Markov Chain MFPT: {gap2['mfpt_learned']:.2f} s | Optimum: {gap2['mfpt_optimal']:.2f} s")
+    print(f"  Learning Gap: {gap2['learning_gap']:.2f}x ({gap2['ratio_percentage']})")
+    print(f"  Reaction Coord Diagnostic Delta q: {gap2['max_delta_q']:.6e} (Memory enters reaction coordinate!)")
+

@@ -91,15 +91,15 @@ def generate_all_figures():
     mu_b0 = th_med.b0_drift(x_grid, theta=0.5)
     mu_b1 = th_med.b1_drift(x_grid, mode="independent")
 
-    ax.plot(x_grid, mu_b0, label="$b=0$ Memoryless Drift $\mu(x) = v F(c(x))$", color="#e7298a", lw=2.5)
-    ax.plot(x_grid, mu_b1, label="$b=1$ 1-Bit Drift $\mu(x) \propto c'(x)$", color="#1b9e77", lw=2.5)
+    ax.plot(x_grid, mu_b0, label=r"$b=0$ Memoryless Drift $\mu(x) = v F(c(x))$", color="#e7298a", lw=2.5)
+    ax.plot(x_grid, mu_b1, label=r"$b=1$ 1-Bit Drift $\mu(x) \propto c'(x)$", color="#1b9e77", lw=2.5)
     ax.axvline(ls_med.x1_peak, color="gray", ls="--", label=f"Peak $x_1={ls_med.x1_peak:.2f}$")
     ax.axvline(ls_med.x_min, color="k", ls=":", label=f"Valley $x_{{min}}={ls_med.x_min:.2f}$")
     ax.axhline(0, color="k", ls="-", lw=0.8, alpha=0.7)
 
     ax.set_title("Memoryless ($b=0$) vs 1-Bit ($b=1$) Drift Profiles")
     ax.set_xlabel("Position $x$")
-    ax.set_ylabel("Marginal Drift $\mu(x)$")
+    ax.set_ylabel(r"Marginal Drift $\mu(x)$")
     ax.legend(frameon=True, loc="upper right")
     plt.tight_layout()
     fig_path2 = os.path.join(fig_dir, "fig2_drift_profiles.png")
@@ -126,7 +126,7 @@ def generate_all_figures():
     axes[0].bar(lags - 0.15, sim_autocorr, width=0.3, label="Simulation (Single Sensor)", color="#386cb0")
     axes[0].bar(lags + 0.15, theory_autocorr, width=0.3, label="Exact Theory (Arcsine Law)", color="#f0027f", alpha=0.7)
     axes[0].axhline(0, color="k", ls="-", lw=0.8)
-    axes[0].set_title("(a) Action Autocorrelation $\langle a_t a_{t+k} \\rangle$ on Flat Landscape")
+    axes[0].set_title(r"(a) Action Autocorrelation $\langle a_t a_{t+k} \rangle$ on Flat Landscape")
     axes[0].set_xlabel("Lag $k$")
     axes[0].set_ylabel("Autocorrelation")
     axes[0].set_xticks(lags)
@@ -137,11 +137,11 @@ def generate_all_figures():
     mu_indep = th_med.b1_drift(x_flank, mode="independent")
     mu_single = th_med.b1_drift(x_flank, mode="single_sensor")
 
-    axes[1].plot(x_flank, mu_indep, label="Independent Readings ($\mu = v\,\mathrm{erf}(\dots)$)", color="#1b9e77", lw=2.5)
-    axes[1].plot(x_flank, mu_single, label="Single Sensor ($\kappa_\mu = 0.7208$)", color="#d95f02", lw=2.5, ls="--")
+    axes[1].plot(x_flank, mu_indep, label=r"Independent Readings ($\mu = v\,\mathrm{erf}(\dots)$)", color="#1b9e77", lw=2.5)
+    axes[1].plot(x_flank, mu_single, label=r"Single Sensor ($\kappa_\mu = 0.7208$)", color="#d95f02", lw=2.5, ls="--")
     axes[1].set_title("(b) Drift Suppression from Stale Reading Reuse")
     axes[1].set_xlabel("Position $x$")
-    axes[1].set_ylabel("Drift $\mu(x)$")
+    axes[1].set_ylabel(r"Drift $\mu(x)$")
     axes[1].legend(frameon=True)
 
     plt.tight_layout()
@@ -175,9 +175,9 @@ def generate_all_figures():
         ax.semilogy(du_sig, 50 * np.exp(1.109 * du_sig), "D-", label="Curvature-Corrected (Slope ~ 1.109 -> 2/sqrt(pi))", color="#1b9e77")
         ax.semilogy(du_sig, 50 * np.exp(1.554 * du_sig), "s--", label="Single Sensor (Slope ~ 1.554)", color="#d95f02")
 
-    ax.set_title("Headline Scaling Law: $\ln \langle T_{\mathrm{esc}} \\rangle$ vs $\Delta U_{\mathrm{trap}} / \sigma$\nCurvature-Corrected Prefactor $\\tau_0(a_1)$ Resolves Slope Shortfall ($1.016 \\to 1.109 \\approx 2/\\sqrt{\\pi}$)", fontsize=11)
-    ax.set_xlabel("Trap Barrier Strength $\Delta U_{\mathrm{trap}} / \sigma$", fontsize=10.5)
-    ax.set_ylabel("Mean First-Passage Time $\langle T_{\mathrm{esc}} \\rangle$ (seconds)", fontsize=10.5)
+    ax.set_title(r"Headline Scaling Law: $\ln \langle T_{\mathrm{esc}} \rangle$ vs $\Delta U_{\mathrm{trap}} / \sigma$" + "\n" + r"Curvature-Corrected Prefactor $\tau_0(a_1)$ Resolves Slope Shortfall ($1.016 \to 1.109 \approx 2/\sqrt{\pi}$)", fontsize=11)
+    ax.set_xlabel(r"Trap Barrier Strength $\Delta U_{\mathrm{trap}} / \sigma$", fontsize=10.5)
+    ax.set_ylabel(r"Mean First-Passage Time $\langle T_{\mathrm{esc}} \rangle$ (seconds)", fontsize=10.5)
     ax.legend(frameon=True, fontsize=9)
     plt.tight_layout()
     fig_path4 = os.path.join(fig_dir, "fig4_barrier_sweep_scaling.png")
@@ -203,8 +203,8 @@ def generate_all_figures():
         if mc_pts:
             mc_sig, mc_t = zip(*mc_pts)
             axes[0].semilogy(mc_sig, mc_t, "k*", markersize=10, label="Un-truncated MC (N=2000, Err < 1%)")
-        axes[0].set_title("(a) 4-Way Method Comparison Across Noise $\sigma$\n(Un-truncated MC Confirms Exact Agreement)")
-        axes[0].set_xlabel("Sensing Noise $\sigma$")
+        axes[0].set_title(r"(a) 4-Way Method Comparison Across Noise $\sigma$" + "\n(Un-truncated MC Confirms Exact Agreement)")
+        axes[0].set_xlabel(r"Sensing Noise $\sigma$")
         axes[0].set_ylabel("MFPT (seconds)")
         axes[0].invert_xaxis()
         axes[0].legend(frameon=True)
@@ -216,7 +216,7 @@ def generate_all_figures():
         dq = np.array(com["delta_q"])
 
         axes[1].plot(xg, q_avg, label="Committor $q(x)$", color="#386cb0", lw=2.5)
-        axes[1].plot(xg, dq * 1000, label="$\Delta q(x) \\times 10^3$ (Reaction Coord Diagnostic)", color="#e41a1c", lw=2, ls="--")
+        axes[1].plot(xg, dq * 1000, label=r"$\Delta q(x) \times 10^3$ (Reaction Coord Diagnostic)", color="#e41a1c", lw=2, ls="--")
         axes[1].axhline(0.5, color="gray", ls=":", label="Transition State Level $q=0.5$")
         axes[1].axvline(com["x_ts"], color="k", ls="--", label=f"Transition State $x={com['x_ts']:.2f}$")
         axes[1].axvline(com["x_min"], color="purple", ls=":", label=f"Valley $x_{{min}}={com['x_min']:.2f}$")
@@ -241,24 +241,35 @@ def generate_all_figures():
         episodes_b0 = np.arange(len(rew_b0)) * 5
         episodes_b1 = np.arange(len(rew_b1)) * 5
 
-        axes[0].plot(episodes_b0, rew_b0, label="$b=0$ Q-Learner (Memoryless)", color="#e7298a", lw=2)
-        axes[0].plot(episodes_b1, rew_b1, label="$b=1$ Q-Learner (1-Bit Memory)", color="#1b9e77", lw=2)
-        axes[0].set_title("(a) Reinforcement Learning Training Curves\n(Local Concentration Confinement vs Global Escape)")
+        axes[0].plot(episodes_b0, rew_b0, label=r"$b=0$ Q-Learner (Memoryless)", color="#e7298a", lw=2)
+        axes[0].plot(episodes_b1, rew_b1, label=r"$b=1$ Q-Learner (1-Bit Memory)", color="#1b9e77", lw=2)
+        if "b2_learning_curve" in data["step8"]:
+            rew_b2 = data["step8"]["b2_learning_curve"]
+            episodes_b2 = np.arange(len(rew_b2)) * 5
+            axes[0].plot(episodes_b2, rew_b2, label=r"$b=2$ Q-Learner (2-Bit Filter)", color="#7570b3", lw=2.2)
+        axes[0].set_title(r"(a) Reinforcement Learning Training Curves" + "\n" + r"(Local Concentration Confinement vs Global Escape)")
         axes[0].set_xlabel("Training Episode")
-        axes[0].set_ylabel("Episode Reward (True Field $c(x)$)")
+        axes[0].set_ylabel(r"Episode Reward (True Field $c(x)$)")
         axes[0].legend(frameon=True)
 
     # Learning Gap bar comparison
     if "step8" in data:
         b0_gap = data["step8"]["b0_results"]["learning_gap"]
         b1_gap = data["step8"]["b1_results"]["learning_gap"]
-        categories = ["$b=0$ (Diffusive Baseline)", "$b=1$ (1-Bit Exact Optimum)"]
+        categories = [r"$b=0$" + "\n(Diffusive)", r"$b=1$" + "\n(1-Bit Optimum)"]
         gaps = [b0_gap if np.isfinite(b0_gap) else 1.0, b1_gap if np.isfinite(b1_gap) else 1.0]
+        bar_colors = ["#e7298a", "#1b9e77"]
 
-        bars = axes[1].bar(categories, gaps, color=["#e7298a", "#1b9e77"], width=0.45)
-        axes[1].axhline(1.0, color="k", ls="--", lw=1.5, label="Analytical Reference Baseline ($1.0\\times$)")
-        axes[1].set_title("(b) Escape Efficiency Ratio $\\langle T_{\mathrm{esc}} \\rangle_{\mathrm{learned}} / \\langle T_{\mathrm{esc}} \\rangle_{\mathrm{baseline}}$\n($b=0$: Diffusive Baseline; $b=1$: Exact Markov Optimum)")
-        axes[1].set_ylabel("Efficiency Ratio")
+        if "b2_results" in data["step8"]:
+            b2_gap = data["step8"]["b2_results"]["learning_gap"]
+            categories.append(r"$b=2$" + "\n(2-Bit Optimum)")
+            gaps.append(b2_gap if np.isfinite(b2_gap) else 1.0)
+            bar_colors.append("#7570b3")
+
+        bars = axes[1].bar(categories, gaps, color=bar_colors, width=0.45)
+        axes[1].axhline(1.0, color="k", ls="--", lw=1.5, label=r"Analytical Reference Baseline ($1.0\times$)")
+        axes[1].set_title(r"(b) Escape Efficiency Ratio $\langle T_{\mathrm{esc}} \rangle_{\mathrm{learned}} / \langle T_{\mathrm{esc}} \rangle_{\mathrm{baseline}}$" + "\n" + r"($b=0$: Diffusive Baseline; $b=1, 2$: Exact Markov Optimum)")
+        axes[1].set_ylabel("Efficiency Ratio (Learning Gap)")
         axes[1].set_ylim(0, max(max(gaps) * 1.3, 1.5))
         for bar in bars:
             h = bar.get_height()
