@@ -1,0 +1,8 @@
+{
+  "exact_mfpt": 147.24376,
+  "exact_std": 14.797240819233835,
+  "rl_mfpt": 100.0,
+  "rl_std": 0.0,
+  "best_policy": 2.3976,
+  "worst_policy": 80.0
+}

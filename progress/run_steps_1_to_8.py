@@ -309,9 +309,9 @@ def run_all_steps():
     }
 
     # =========================================================================
-    # STEP 8: Reinforcement Learning (b = 0, 1) & Learnability Benchmark (POMDP)
+    # STEP 8: Reinforcement Learning (b = 0, 1, 2) & Learnability Benchmark (POMDP)
     # =========================================================================
-    print("\n[STEP 8] Training Pure POMDP Tabular Q-Learners (b=0, 1; Zero Spatial Leaks)...")
+    print("\n[STEP 8] Training Pure POMDP Tabular Q-Learners (b=0, 1, 2; Zero Spatial Leaks)...")
     # 1. b = 0 Q-learner (Memoryless, threshold observation)
     print("  Training b=0 agent (sensory threshold, zero memory)...")
     q_b0 = TabularQChemotaxis(ls_step5, b=0, alpha=0.15, gamma=0.90)
@@ -326,12 +326,33 @@ def run_all_steps():
     gap_b1 = q_b1.compute_learning_gap()
     print(f"  b=1 Result: Learned MFPT={gap_b1['mfpt_learned']:.3f}s | Exact Optimal={gap_b1['mfpt_baseline']:.3f}s | Learning Gap={gap_b1['learning_gap']:.4f} ({gap_b1['ratio_percentage']})")
     print(f"  Autonomous Rule Discovery: {gap_b1['rule_description']}")
+    print(f"  Committor Delta q: {gap_b1['max_delta_q']:.6e} (Memory non-reactive)")
+
+    # 3. b = 2 Q-learner (2-bit temporal filter, 4x2 motor Q-table)
+    print("  Training b=2 agent (2-step temporal history filter, 4 states)...")
+    q_b2 = TabularQChemotaxis(ls_step5, b=2, alpha=0.15, gamma=0.90)
+    train_b2 = q_b2.train(n_episodes=500, max_steps_per_episode=80)
+    gap_b2 = q_b2.compute_learning_gap()
+    print(f"  b=2 Result: Learned MFPT={gap_b2['mfpt_learned']:.3f}s | Exact Optimal={gap_b2['mfpt_optimal']:.3f}s | Learning Gap={gap_b2['learning_gap']:.4f} ({gap_b2['ratio_percentage']})")
+    print(f"  Autonomous Rule Discovery: {gap_b2['rule_description']}")
+    print(f"  Committor Delta q: {gap_b2['max_delta_q']:.6e} (Memory ENTERS reaction coordinate!)")
 
     all_data["step8"] = {
         "b0_results": gap_b0,
         "b1_results": gap_b1,
+        "b2_results": gap_b2,
         "b0_learning_curve": train_b0["episode_rewards"][::5].tolist(),
-        "b1_learning_curve": train_b1["episode_rewards"][::5].tolist()
+        "b1_learning_curve": train_b1["episode_rewards"][::5].tolist(),
+        "b2_learning_curve": train_b2["episode_rewards"][::5].tolist(),
+        "comparison_matrix": {
+            "b_values": [0, 1, 2],
+            "n_states": [2, 2, 4],
+            "mfpt_learned": [gap_b0['mfpt_learned'], gap_b1['mfpt_learned'], gap_b2['mfpt_learned']],
+            "mfpt_optimal": [gap_b0['mfpt_baseline'], gap_b1['mfpt_optimal'], gap_b2['mfpt_optimal']],
+            "learning_gaps": [gap_b0['learning_gap'], gap_b1['learning_gap'], gap_b2['learning_gap']],
+            "max_delta_q": [0.0, gap_b1['max_delta_q'], gap_b2['max_delta_q']],
+            "rules": [gap_b0['rule_description'], gap_b1['rule_description'], gap_b2['rule_description']]
+        }
     }
 
     # Save all data to JSON

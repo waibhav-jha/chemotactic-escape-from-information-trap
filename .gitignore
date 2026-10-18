@@ -20,3 +20,6 @@ scratch_pdf_texts/
 .venv
 env/
 venv/
+
+# Presentation backups
+*.pptx

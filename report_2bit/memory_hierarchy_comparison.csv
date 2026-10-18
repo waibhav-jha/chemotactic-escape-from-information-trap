@@ -1,0 +1,9 @@
+Metric,b0_Memoryless,b1_Temporal_1Bit,b2_History_Filter_2Bit
+Sensory States |S|,"2 (Low, High)","2 (Falling, Rising)","4 (FF, FR, RF, RR)"
+Q-Table Dimension,2 x 2 (4 values),2 x 2 (4 values),4 x 2 (8 values)
+Discovered Policy Rule,Threshold Wandering,"Persist on Rise, Reverse on Fall",PRPR Temporal History Filter
+Optimal Benchmark MFPT (s),224.91,6708.85,288.27
+Learned MFPT (s),258.64,6708.85,1275.82
+Learning Gap (Learned / Opt),1.150x,1.000x,4.426x
+Committor Diagnostic max Delta q,0.0,9.10e-06,1.024e-02
+Physical Escape Regime,Unbiased Random Diffusion,Arrhenius Barrier Crossing,Noise-Filtered Chemotaxis

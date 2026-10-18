@@ -1,0 +1,10 @@
+{
+  "b": 3,
+  "exact_mfpt": 335.89501504464346,
+  "exact_std": 0.0,
+  "rl_mfpt": 200.0,
+  "rl_std": 0.0,
+  "best_policy_mfpt": 1.4300000000000015,
+  "worst_policy_mfpt": 1502794679375459.5,
+  "n_policies": 250
+}
