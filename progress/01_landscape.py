@@ -1,36 +1,50 @@
 """
-01_landscape.py: Complete implementation of Step 1 Landscape Blueprint.
-Plots concentration c(x), gradient c'(x), curvature c''(x), finds extrema,
-and prints Kramers prefactor tau_0 across Shallow, Medium, and Deep presets.
+01_landscape.py: Step 1 Blueprint (Roadmap Version 2).
+Constructs double-Gaussian chemical landscapes, analytical derivatives c'(x) and c''(x),
+finds actual extrema (x_L, x_s, x_H), computes Delta U_trap and Delta c_target,
+and verifies c'(x) = 0 at extrema across presets L1a, L1b, L1c, L2, and L3.
 """
-import sys, os
+import sys
+import os
 import numpy as np
-import matplotlib.pyplot as plt
 
+# Ensure workspace root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from progress.landscape import ChemicalLandscape
 
-if __name__ == "__main__":
-    print("=== [01_landscape.py] Chemical Landscape & Barrier Extrema ===")
-    for preset_name in ["shallow", "medium", "deep"]:
-        ls = ChemicalLandscape.from_preset(preset_name)
-        s = ls.summary()
-        print(f"\n--- Preset: {preset_name.upper()} ---")
-        print(f"  x1 (peak 1)  = {s['x1_peak']:10.4f} | c(x1)  = {s['c(x1)']:10.4f} | c''(x1)  = {s['c''(x1)']:10.4f}")
-        print(f"  x_min (trap) = {s['x_min']:10.4f} | c(xmin)= {s['c(x_min)']:10.4f} | c''(xmin)= {s['c''(x_min)']:10.4f}")
-        print(f"  x2 (peak 2)  = {s['x2_peak']:10.4f} | c(x2)  = {s['c(x2)']:10.4f}")
-        print(f"  Barrier Delta U_trap = {s['Delta_U_trap']:10.4f}")
-        print(f"  Kramers Prefactor tau_0 (sigma=0.10) = {s['tau_0 (sigma=0.10)']:10.4f} s")
 
-    # Plot
-    ls_med = ChemicalLandscape.from_preset("medium")
-    x = np.linspace(-4.5, 4.5, 500)
-    plt.figure(figsize=(8, 5))
-    plt.plot(x, ls_med.c(x), lw=2.5, color="#1b9e77", label="c(x)")
-    plt.scatter([ls_med.x1_peak, ls_med.x_min, ls_med.x2_peak],
-                [ls_med.c_x1, ls_med.c_xmin, ls_med.c_x2],
-                color="#d95f02", s=70, zorder=5, label="Extrema (x1, x_min, x2)")
-    plt.axvline(ls_med.x_min, color="k", ls="--", alpha=0.6, label=f"Valley Minimum x_min={ls_med.x_min:.2f}")
-    plt.title("Double-Gaussian Chemical Landscape (Medium Preset)")
-    plt.xlabel("Position x"); plt.ylabel("Concentration c(x)")
-    plt.legend(); plt.tight_layout(); plt.show()
+def run_step_1():
+    print("=" * 80)
+    print("STEP 1: Construct Chemical Landscapes & Extrema Geometry (Roadmap Version 2)")
+    print("=" * 80)
+    
+    presets = ["L1a", "L1b", "L1c", "L2", "L3"]
+    results = {}
+    
+    for name in presets:
+        ls = ChemicalLandscape.from_preset(name)
+        s = ls.summary()
+        results[name] = s
+        print(f"\n--- Preset: {name} ({s.get('preset')}) ---")
+        print(f"  Lower Peak x_L     = {s['x_L (lower peak)']:10.4f} | c(x_L) = {s['c(x_L)']:10.4f} | c''(x_L) = {s['c''(x_L)']:10.4f}")
+        print(f"  Valley Saddle x_s  = {s['x_s (valley)']:10.4f} | c(x_s) = {s['c(x_s)']:10.4f} | c''(x_s) = {s['c''(x_s)']:10.4f}")
+        print(f"  Higher Peak x_H    = {s['x_H (higher peak)']:10.4f} | c(x_H) = {s['c(x_H)']:10.4f} | c''(x_H) = {s['c''(x_H)']:10.4f}")
+        print(f"  Barrier Delta U_trap   = {s['Delta_U_trap']:10.4f}")
+        print(f"  Target Delta c_target  = {s['Delta_c_target']:10.4f}")
+        print(f"  Kramers tau_0 (s)      = {s['tau_0 (sigma=0.10)']:10.4f}")
+        
+        # Verify derivative vanishes at extrema
+        grad_L = float(ls.dc(ls.x_L))
+        grad_s = float(ls.dc(ls.x_s))
+        grad_H = float(ls.dc(ls.x_H))
+        assert abs(grad_L) < 1e-4, f"c'(x_L) != 0: {grad_L}"
+        assert abs(grad_s) < 1e-4, f"c'(x_s) != 0: {grad_s}"
+        assert abs(grad_H) < 1e-4, f"c'(x_H) != 0: {grad_H}"
+        print(f"  Extrema Verification: c'(x_L)={grad_L:.2e}, c'(x_s)={grad_s:.2e}, c'(x_H)={grad_H:.2e} [VERIFIED]")
+
+    return results
+
+
+if __name__ == "__main__":
+    run_step_1()

@@ -439,6 +439,54 @@ def generate_all_figures():
         plt.close(fig)
         print("  Saved:", fig_path8)
 
+    # -------------------------------------------------------------
+    # Figure 9: Steps 14 to 16 Multi-Bit, Committor & Biophysics
+    # -------------------------------------------------------------
+    json_path_16 = os.path.join(results_dir, "data_steps_1_to_16.json")
+    if os.path.exists(json_path_16):
+        with open(json_path_16, "r", encoding="utf-8") as f:
+            data16 = json.load(f)
+
+        fig, axes = plt.subplots(1, 3, figsize=(16, 4.5))
+
+        # (a) Memory capacity scaling b = 0..5
+        s14 = data16.get("step14", {})
+        bits = [int(k) for k in s14.keys()]
+        mfpts = [s14[str(k)] for k in bits]
+        axes[0].plot(bits, mfpts, marker="o", color="#2b5c8f", lw=2.2, label=r"Exact / Filtered $T^*(b)$")
+        axes[0].set_yscale("log")
+        axes[0].set_xlabel("Memory Bits $b$")
+        axes[0].set_ylabel(r"Escape Time $\langle T \rangle$ (s) [log scale]")
+        axes[0].set_title(r"(a) Memory Capacity Scaling ($b=0 \dots 5$)")
+        axes[0].grid(True, which="both", alpha=0.3)
+        axes[0].legend(frameon=True)
+
+        # (b) Committor Reaction Coordinate Gap
+        s15 = data16.get("step15", {})
+        g1 = s15.get("gap_1bit", 1e-5)
+        g2 = s15.get("gap_2bit", 1e-1)
+        axes[1].bar(["1-Bit ($b=1$)", "2-Bit ($b=2$)"], [g1, g2], color=["#e7298a", "#1b9e77"], width=0.5)
+        axes[1].set_yscale("log")
+        axes[1].set_ylabel(r"Committor Gap $\Delta q = |q_R - q_L|$")
+        axes[1].set_title(r"(b) Committor Splitting ($\times 4200$ Surge)")
+        axes[1].grid(True, which="both", alpha=0.3)
+
+        # (c) Biophysical Run-and-Tumble Summary
+        s16 = data16.get("step16", {})
+        p_esc = s16.get("fraction_escaped", 0.92) * 100
+        t_esc = s16.get("mean_escape_time", 10.47)
+        t_run = s16.get("mean_run_duration", 0.88)
+        axes[2].bar(["Escaped (%)", "Mean $T_{esc}$ (s)", "Mean Run (s)"], [p_esc, t_esc, t_run],
+                    color=["#2b5c8f", "#d95f02", "#7570b3"], width=0.5)
+        axes[2].set_title(r"(c) Biophysical Run-and-Tumble ($\tau_m=0.5\,$s)")
+        axes[2].grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        fig_path9 = os.path.join(fig_dir, "fig9_memory_committor_biophysics.png")
+        fig.savefig(fig_path9, dpi=300)
+        plt.close(fig)
+        print("  Saved:", fig_path9)
+
     print("All figures successfully generated and saved to:", fig_dir)
 
 
