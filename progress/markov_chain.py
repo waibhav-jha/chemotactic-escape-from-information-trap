@@ -10,6 +10,12 @@ import numpy as np
 import scipy.sparse as sp
 from scipy.sparse.linalg import spsolve, eigs
 from scipy.special import ndtr
+import os
+import sys
+
+# Ensure workspace root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from progress.parameters import PhysicalParameters
 from progress.landscape import ChemicalLandscape
 
